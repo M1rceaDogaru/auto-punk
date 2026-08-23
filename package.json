@@ -1,0 +1,23 @@
+{
+  "name": "auto-punk",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"npm run dev --workspace @auto-punk/server\" \"npm run dev --workspace @auto-punk/web\"",
+    "start": "npm run start --workspace @auto-punk/server",
+    "build:web": "npm run build --workspace @auto-punk/web",
+    "test": "node --import tsx --test \"packages/shared/test/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "concurrently": "^9.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

@@ -6,6 +6,7 @@ import {
   createCyberpunkCharacter,
   deriveStats,
   emptyAttributes,
+  maxSkillPool,
 } from '../src/index.js';
 
 const ctx = { roomId: 'r1', playerId: 'p1', id: () => 'c1' };
@@ -38,7 +39,7 @@ test('clamps out-of-range attributes and skills', () => {
     { name: 'X', attributes: { ...emptyAttributes(), body: 99 }, skills: { Guns: 99, Melee: -3 } },
     ctx,
   );
-  assert.equal(c.attributes.body, 7); // clamped to MAX_ATTR
+  assert.equal(c.attributes.body, 6); // clamped to MAX_ATTR
   assert.equal(c.skills.Guns, 6); // clamped to MAX_SKILL
   assert.equal(c.skills.Melee, 0); // clamped to MIN_SKILL
 });
@@ -73,4 +74,18 @@ test('leaves under-budget skill sets untouched', () => {
   const c = createCyberpunkCharacter({ name: 'Lean', attributes: emptyAttributes(), skills: { Guns: 5, Stealth: 4 } }, ctx);
   assert.equal(c.skills.Guns, 5);
   assert.equal(c.skills.Stealth, 4);
+});
+
+test('maxSkillPool is governing attribute plus skill rating', () => {
+  const c = createCyberpunkCharacter(
+    { name: 'X', attributes: { ...emptyAttributes(), cool: 4 }, skills: { Guns: 5 } },
+    ctx,
+  );
+  assert.equal(maxSkillPool(c, 'Guns'), 9); // Cool 4 + Guns 5
+});
+
+test('maxSkillPool caps at the theoretical max and falls back for unknown skills', () => {
+  const attrs = { ...emptyAttributes(), body: 6 };
+  assert.equal(maxSkillPool({ attributes: attrs, skills: { Melee: 6 } }, 'Melee'), 12); // Body 6 + Melee 6
+  assert.equal(maxSkillPool({ attributes: attrs, skills: {} }, 'Unknown Skill'), 0); // no rating → 0
 });

@@ -50,6 +50,36 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
 
 export const ALL_SKILLS: string[] = SKILL_CATEGORIES.flatMap((c) => c.skills);
 
+/** The attribute governing each skill for pool calculation (CP2020). */
+export const SKILL_ATTRIBUTES: Record<string, AttributeKey> = {
+  Guns: 'cool',
+  Melee: 'body',
+  Throwing: 'reflexes',
+  Athletics: 'body',
+  Driving: 'reflexes',
+  Stealth: 'reflexes',
+  Streetwise: 'empathy',
+  Barter: 'intelligence',
+  Oratory: 'cool',
+  Persuasion: 'cool',
+  Psychology: 'intelligence',
+  Computer: 'tech',
+  Cyberdeck: 'tech',
+  Electronics: 'tech',
+  'First Aid': 'empathy',
+  Medicine: 'intelligence',
+  Repair: 'tech',
+  'Security Systems': 'reflexes',
+};
+
+/** Max dice pool for a skill test = governing attribute + skill rating (CP2020). */
+export function maxSkillPool(character: Pick<Character, 'attributes' | 'skills'>, skillName: string): number {
+  const rating = character.skills[skillName] ?? 0;
+  const attrKey = SKILL_ATTRIBUTES[skillName];
+  if (!attrKey) return Math.min(rating, MAX_SKILL);
+  return (character.attributes[attrKey] ?? 0) + rating;
+}
+
 /** Total skill points a character may spend across all skills (CP2020). */
 export const SKILL_POINT_BUDGET = 45;
 
@@ -94,7 +124,7 @@ export const AI_PERSONA_PRESETS: AIPersona[] = [
 ];
 
 const MIN_ATTR = 1;
-const MAX_ATTR = 7;
+const MAX_ATTR = 6;
 const MIN_SKILL = 0;
 const MAX_SKILL = 6;
 

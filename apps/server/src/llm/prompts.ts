@@ -219,7 +219,7 @@ ${formatEvents(args.events, 25)}
 OTHER PLAYERS' ACTIONS THIS ROUND:
 ${others}
 
-Respond with JSON: {"intent": string, "skillUsed": string|null, "dicePool": number|null}`;
+Respond with JSON: {"intent": string, "skillUsed": string|null, "dicePool": number|null} (when testing a skill, dicePool must not exceed the governing attribute + that skill's rating)`;
 
   return [
     { role: 'system', content: system },
@@ -229,7 +229,7 @@ Respond with JSON: {"intent": string, "skillUsed": string|null, "dicePool": numb
 
 export function buildAiCharacterMessages(args: { persona: { archetype: string; personality: string; goals: string[]; secrets: string[] }; skillNames: string[] }): ChatMessage[] {
   const p = args.persona;
-    const system = `You generate a Cyberpunk 2020 character sheet for an AI player. Create a coherent, playable character that fits the persona. Attributes are integers 1-7 (higher is better). Skills use ONLY these names with integer ratings 0-6: ${args.skillNames.join(', ')}. The sum of all skill ratings must not exceed ${SKILL_POINT_BUDGET} points — spend them on a focused set of skills that fit the persona. Edge pool is 1-8. Starting cash (edd) is 100-5000. Respond with ONLY valid JSON.`;
+    const system = `You generate a Cyberpunk 2020 character sheet for an AI player. Create a coherent, playable character that fits the persona. Attributes are integers 1-6 (higher is better). Skills use ONLY these names with integer ratings 0-6: ${args.skillNames.join(', ')}. The sum of all skill ratings must not exceed ${SKILL_POINT_BUDGET} points — spend them on a focused set of skills that fit the persona. Edge pool is 1-8. Starting cash (edd) is 100-5000. Respond with ONLY valid JSON.`;
   const user = `Persona to embody:
 archetype: ${p.archetype}
 personality: ${p.personality}

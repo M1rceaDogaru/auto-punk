@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ATTRIBUTE_KEYS, ATTRIBUTE_LABELS, SKILL_CATEGORIES, SKILL_POINT_BUDGET, emptyAttributes, type AttributeKey, type Attributes, type NewCharacterInput } from '@auto-punk/shared';
+import NumberSlider from './NumberSlider';
 
 interface SkillRow {
   name: string;
@@ -185,13 +186,7 @@ export default function CharacterForm({ onCreate }: { onCreate: (input: NewChara
               <span>
                 {ATTRIBUTE_LABELS[k]} <InfoTip text={ATTRIBUTE_HINTS[k]} />
               </span>
-              <input
-                type="number"
-                min={1}
-                max={6}
-                value={attributes[k]}
-                onChange={(e) => setAttributes((prev) => ({ ...prev, [k]: Number(e.target.value) }))}
-              />
+              <NumberSlider value={attributes[k]} min={1} max={6} onChange={(v) => setAttributes((prev) => ({ ...prev, [k]: v }))} />
             </label>
           ))}
         </div>
@@ -232,14 +227,7 @@ export default function CharacterForm({ onCreate }: { onCreate: (input: NewChara
             {skills.map((s) => (
               <li key={s.name} className="row">
                 <span>{s.name}</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={6}
-                  className="rating-input"
-                  value={s.value}
-                  onChange={(e) => setSkillValue(s.name, Number(e.target.value))}
-                />
+                <NumberSlider value={s.value} min={0} max={6} onChange={(v) => setSkillValue(s.name, v)} />
                 <button type="button" className="ghost" onClick={() => removeSkill(s.name)}>×</button>
               </li>
             ))}

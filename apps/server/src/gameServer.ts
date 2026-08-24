@@ -3,6 +3,7 @@ import {
   ALL_SKILLS,
   createRng,
   getGameSystem,
+  maxSkillPool,
   rollD10Pool,
   rollSucceeded,
   type AIPersona,
@@ -415,7 +416,8 @@ export class GameServer {
           if (!action.skillUsed && action.dicePool === undefined) continue;
           const character = doc.characters.find((c) => c.playerId === action.playerId);
           if (!character) continue;
-          const pool = action.dicePool ?? character.skills[action.skillUsed!] ?? 0;
+          let pool = action.dicePool ?? character.skills[action.skillUsed!] ?? 0;
+          if (action.skillUsed) pool = Math.min(pool, maxSkillPool(character, action.skillUsed));
           if (pool <= 0) continue;
           const roll = rollD10Pool(pool, `${action.characterName}: ${action.skillUsed}`, createRng());
           rolls.push(roll);

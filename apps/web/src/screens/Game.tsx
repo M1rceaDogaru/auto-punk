@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { maxSkillPool } from '@auto-punk/shared';
 import { useGameStore } from '../store/useGameStore.js';
 import EventFeed from '../components/EventFeed.js';
 import CharacterSheet from '../components/CharacterSheet.js';
@@ -28,6 +29,14 @@ export default function Game() {
   const [gmQuestion, setGmQuestion] = useState('');
   const gmLogRef = useRef<HTMLDivElement>(null);
 
+  const maxPool = myChar && skill ? maxSkillPool(myChar, skill) : undefined;
+
+  useEffect(() => {
+    if (maxPool === undefined) return;
+    const n = Number(pool);
+    if (Number.isFinite(n) && n > maxPool) setPool(String(maxPool));
+  }, [maxPool]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     gmLogRef.current?.scrollTo({ top: gmLogRef.current.scrollHeight });
   }, [gmChat]);
@@ -35,10 +44,12 @@ export default function Game() {
   function submit(e: React.FormEvent): void {
     e.preventDefault();
     if (!intent.trim()) return;
+    let dicePool = pool ? Number(pool) : undefined;
+    if (dicePool !== undefined && maxPool !== undefined) dicePool = Math.min(dicePool, maxPool);
     declareAction({
       intent: intent.trim(),
       skillUsed: skill || undefined,
-      dicePool: pool ? Number(pool) : undefined,
+      dicePool,
     });
     setIntent('');
     setSkill('');
@@ -92,7 +103,24 @@ export default function Game() {
                       <option key={name} value={name}>{name} ({val})</option>
                     ))}
                   </select>
-                  <input type="number" min={1} style={{ width: 90 }} placeholder="pool" value={pool} onChange={(e) => setPool(e.target.value)} disabled={!canAct} />
+                  <input
+                    type="number"
+                    min={1}
+                    max={maxPool}
+                    style={{ width: 90 }}
+                    placeholder="pool"
+                    value={pool}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === '') { setPool(''); return; }
+                      let n = Number(raw);
+                      if (!Number.isFinite(n)) return;
+                      if (maxPool !== undefined) n = Math.min(n, maxPool);
+                      setPool(String(Math.max(1, n)));
+                    }}
+                    disabled={!canAct}
+                  />
+                  {maxPool !== undefined && <span className="muted small">≤ {maxPool}</span>}
                 </div>
               )}
               <div className="row spread">

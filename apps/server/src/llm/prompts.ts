@@ -1,6 +1,6 @@
 import type { ChatMessage } from './llmClient.js';
 import type { Character, DeclaredAction, DiceRollResult, GameEvent, StateChange } from '@auto-punk/shared';
-import { SKILL_POINT_BUDGET, rollSucceeded } from '@auto-punk/shared';
+import { ATTRIBUTE_POINT_BUDGET, SKILL_POINT_BUDGET, rollSucceeded } from '@auto-punk/shared';
 
 // ---- Output shapes (validated by the caller via chatJSON) -----------------
 
@@ -229,7 +229,7 @@ Respond with JSON: {"intent": string, "skillUsed": string|null, "dicePool": numb
 
 export function buildAiCharacterMessages(args: { persona: { archetype: string; personality: string; goals: string[]; secrets: string[] }; skillNames: string[] }): ChatMessage[] {
   const p = args.persona;
-    const system = `You generate a Cyberpunk 2020 character sheet for an AI player. Create a coherent, playable character that fits the persona. Attributes are integers 1-6 (higher is better). Skills use ONLY these names with integer ratings 0-6: ${args.skillNames.join(', ')}. The sum of all skill ratings must not exceed ${SKILL_POINT_BUDGET} points — spend them on a focused set of skills that fit the persona. Edge pool is 1-8. Starting cash (edd) is 100-5000. Respond with ONLY valid JSON.`;
+    const system = `You generate a Cyberpunk 2020 character sheet for an AI player. Create a coherent, playable character that fits the persona. Attributes are integers 1-6 (higher is better) and their sum must not exceed ${ATTRIBUTE_POINT_BUDGET} points — spend them on attributes that fit the persona. Skills use ONLY these names with integer ratings 0-6: ${args.skillNames.join(', ')}. The sum of all skill ratings must not exceed ${SKILL_POINT_BUDGET} points — spend them on a focused set of skills that fit the persona. Edge pool is 1-8. Starting cash (edd) is 100-5000. Respond with ONLY valid JSON.`;
   const user = `Persona to embody:
 archetype: ${p.archetype}
 personality: ${p.personality}

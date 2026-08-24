@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ATTRIBUTE_KEYS, ATTRIBUTE_LABELS, SKILL_CATEGORIES, SKILL_POINT_BUDGET, emptyAttributes, type AttributeKey, type Attributes, type NewCharacterInput } from '@auto-punk/shared';
+import { ATTRIBUTE_KEYS, ATTRIBUTE_LABELS, ATTRIBUTE_POINT_BUDGET, SKILL_CATEGORIES, SKILL_POINT_BUDGET, emptyAttributes, type AttributeKey, type Attributes, type NewCharacterInput } from '@auto-punk/shared';
 import NumberSlider from './NumberSlider';
 
 interface SkillRow {
@@ -146,6 +146,16 @@ export default function CharacterForm({ onCreate }: { onCreate: (input: NewChara
   const usedPoints = skills.reduce((sum, s) => sum + s.value, 0);
   const remainingPoints = SKILL_POINT_BUDGET - usedPoints;
 
+  const attrUsed = ATTRIBUTE_KEYS.reduce((sum, k) => sum + attributes[k], 0);
+  const attrRemaining = ATTRIBUTE_POINT_BUDGET - attrUsed;
+
+  function setAttributeValue(key: AttributeKey, value: number): void {
+    const others = attrUsed - attributes[key];
+    const maxAllowed = Math.min(6, ATTRIBUTE_POINT_BUDGET - others);
+    const v = Math.max(1, Math.min(maxAllowed, Math.round(value)));
+    setAttributes((prev) => ({ ...prev, [key]: v }));
+  }
+
   function addSkill(skillName: string): void {
     if (skills.some((s) => s.name === skillName)) return;
     if (remainingPoints < 1) return;
@@ -178,15 +188,18 @@ export default function CharacterForm({ onCreate }: { onCreate: (input: NewChara
       </label>
 
       <div>
-        <h2>Attributes</h2>
-        <p className="hint">1–6, higher is better. Hover ⓘ for what each attribute does.</p>
+        <div className="row spread">
+          <h2>Attributes</h2>
+          <span className={`badge${attrRemaining <= 0 ? ' host' : ''}`}>{attrRemaining} pts left</span>
+        </div>
+        <p className="hint">1–6 each, {ATTRIBUTE_POINT_BUDGET} points total across all six. Hover ⓘ for what each attribute does.</p>
         <div className="stat-grid">
           {ATTRIBUTE_KEYS.map((k) => (
             <label key={k} className="field stat">
               <span>
                 {ATTRIBUTE_LABELS[k]} <InfoTip text={ATTRIBUTE_HINTS[k]} />
               </span>
-              <NumberSlider value={attributes[k]} min={1} max={6} onChange={(v) => setAttributes((prev) => ({ ...prev, [k]: v }))} />
+              <NumberSlider value={attributes[k]} min={1} max={6} onChange={(v) => setAttributeValue(k, v)} />
             </label>
           ))}
         </div>
@@ -226,7 +239,7 @@ export default function CharacterForm({ onCreate }: { onCreate: (input: NewChara
           <ul className="skill-list">
             {skills.map((s) => (
               <li key={s.name} className="row">
-                <span>{s.name}</span>
+                <span className="skill-name">{s.name}</span>
                 <NumberSlider value={s.value} min={0} max={6} onChange={(v) => setSkillValue(s.name, v)} />
                 <button type="button" className="ghost" onClick={() => removeSkill(s.name)}>×</button>
               </li>

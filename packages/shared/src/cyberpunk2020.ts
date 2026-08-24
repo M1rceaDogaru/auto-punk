@@ -83,6 +83,9 @@ export function maxSkillPool(character: Pick<Character, 'attributes' | 'skills'>
 /** Total skill points a character may spend across all skills (CP2020). */
 export const SKILL_POINT_BUDGET = 45;
 
+/** Total attribute points a character may have across all six attributes (CP2020). */
+export const ATTRIBUTE_POINT_BUDGET = 27;
+
 /** Ready-made personas the host can add as AI players (classic CP2020 archetypes). */
 export const AI_PERSONA_PRESETS: AIPersona[] = [
   {
@@ -148,6 +151,21 @@ function fitSkillBudget(skills: Record<string, number>): void {
   }
 }
 
+/** Reduce ratings (highest first, ties by key order) until the total fits ATTRIBUTE_POINT_BUDGET. */
+function fitAttributeBudget(attributes: Record<AttributeKey, number>): void {
+  let total = Object.values(attributes).reduce((a, b) => a + b, 0);
+  while (total > ATTRIBUTE_POINT_BUDGET) {
+    let topKey: AttributeKey | null = null;
+    for (const k of ATTRIBUTE_KEYS) {
+      if (attributes[k] <= MIN_ATTR) continue;
+      if (topKey === null || attributes[k] > attributes[topKey]) topKey = k;
+    }
+    if (topKey === null) break;
+    attributes[topKey] -= 1;
+    total -= 1;
+  }
+}
+
 export function emptyAttributes(): Attributes {
   return { body: 3, cool: 3, intelligence: 3, reflexes: 3, tech: 3, empathy: 3 };
 }
@@ -171,6 +189,7 @@ export function createCyberpunkCharacter(input: NewCharacterInput, ctx: CreateCh
   for (const key of ATTRIBUTE_KEYS) {
     attributes[key] = clampInt(input.attributes?.[key] ?? 3, MIN_ATTR, MAX_ATTR);
   }
+  fitAttributeBudget(attributes);
 
   const skills: Record<string, number> = {};
   for (const [skill, rating] of Object.entries(input.skills ?? {})) {

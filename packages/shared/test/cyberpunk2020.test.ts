@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ALL_SKILLS,
+  ATTRIBUTE_POINT_BUDGET,
   SKILL_POINT_BUDGET,
   createCyberpunkCharacter,
   deriveStats,
@@ -74,6 +75,34 @@ test('leaves under-budget skill sets untouched', () => {
   const c = createCyberpunkCharacter({ name: 'Lean', attributes: emptyAttributes(), skills: { Guns: 5, Stealth: 4 } }, ctx);
   assert.equal(c.skills.Guns, 5);
   assert.equal(c.skills.Stealth, 4);
+});
+
+test('trims attributes that exceed the point budget down to exactly the budget', () => {
+  const c = createCyberpunkCharacter(
+    { name: 'Maxed', attributes: { body: 6, cool: 6, intelligence: 6, reflexes: 6, tech: 6, empathy: 6 }, skills: {} },
+    ctx,
+  );
+  const total = Object.values(c.attributes).reduce((a, b) => a + b, 0);
+  assert.equal(total, ATTRIBUTE_POINT_BUDGET);
+});
+
+test('attribute trimming never drops an attribute below the minimum', () => {
+  const c = createCyberpunkCharacter(
+    { name: 'Skewed', attributes: { body: 6, cool: 6, intelligence: 6, reflexes: 6, tech: 6, empathy: 1 }, skills: {} },
+    ctx,
+  );
+  const total = Object.values(c.attributes).reduce((a, b) => a + b, 0);
+  assert.equal(total, ATTRIBUTE_POINT_BUDGET); // 30 trimmed to 27
+  assert.equal(c.attributes.empathy, 1); // already at minimum, untouched
+});
+
+test('leaves under-budget attribute sets untouched', () => {
+  const c = createCyberpunkCharacter(
+    { name: 'Lean', attributes: { ...emptyAttributes(), body: 5, cool: 4 }, skills: {} },
+    ctx,
+  );
+  assert.equal(c.attributes.body, 5);
+  assert.equal(c.attributes.cool, 4);
 });
 
 test('maxSkillPool is governing attribute plus skill rating', () => {

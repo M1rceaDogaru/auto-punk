@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AIPersona } from '@auto-punk/shared';
+import { AI_PERSONA_PRESETS, type AIPersona } from '@auto-punk/shared';
 import { useGameStore } from '../store/useGameStore.js';
 import CharacterForm from '../components/CharacterForm.js';
 import CharacterSheet from '../components/CharacterSheet.js';
@@ -66,14 +66,30 @@ export default function Lobby() {
             <div className="card col">
               <h2>AI players ({aiDraft.length})</h2>
               {aiDraft.map((persona, i) => (
-                <div key={i} className="row">
-                  <input placeholder="Archetype (e.g. Solo)" value={persona.archetype} onChange={(e) => updateAi(i, 'archetype', e.target.value)} />
-                  <input placeholder="Personality / vibe" value={persona.personality} onChange={(e) => updateAi(i, 'personality', e.target.value)} />
-                  <button className="ghost" onClick={() => setAiDraft((d) => d.filter((_, j) => j !== i))}>×</button>
+                <div key={i} className="col" style={{ gap: 4 }}>
+                  <div className="row">
+                    <input placeholder="Archetype (e.g. Solo)" value={persona.archetype} onChange={(e) => updateAi(i, 'archetype', e.target.value)} />
+                    <input placeholder="Personality / vibe" value={persona.personality} onChange={(e) => updateAi(i, 'personality', e.target.value)} />
+                    <button className="ghost" onClick={() => setAiDraft((d) => d.filter((_, j) => j !== i))}>×</button>
+                  </div>
+                  {(persona.goals.length > 0 || persona.secrets.length > 0) && (
+                    <div className="small muted">
+                      {persona.goals.map((g, j) => `Goal: ${g}`).join(' · ')}
+                      {persona.secrets.length > 0 ? ` · Secret: ${persona.secrets[0]}` : ''}
+                    </div>
+                  )}
                 </div>
               ))}
               <div className="row">
-                <button className="secondary" onClick={() => setAiDraft((d) => [...d, { ...EMPTY_PERSONA }])}>Add AI</button>
+                <span className="muted small">Add AI:</span>
+                {AI_PERSONA_PRESETS.map((p) => (
+                  <button key={p.archetype} type="button" className="ghost" title={`${p.personality}\nGoals: ${p.goals.join('; ')}`} onClick={() => setAiDraft((d) => [...d, { ...p }])}>
+                    {p.archetype}
+                  </button>
+                ))}
+                <button type="button" className="secondary" onClick={() => setAiDraft((d) => [...d, { ...EMPTY_PERSONA }])}>Custom…</button>
+              </div>
+              <div className="row">
                 <button disabled={busy} onClick={() => configureAI(aiDraft)}>Apply roster</button>
               </div>
             </div>

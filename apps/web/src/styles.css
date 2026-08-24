@@ -28,6 +28,8 @@ h2 { font-size: 1.15rem; margin: 0 0 8px; }
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; }
 
+.hint { margin: -2px 0 6px; font-size: 0.8rem; line-height: 1.45; color: var(--muted); }
+
 .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
 
 .card {
@@ -108,3 +110,47 @@ label.field { display: flex; flex-direction: column; gap: 4px; font-size: 0.85re
 
 .link { color: var(--accent-2); text-decoration: none; cursor: pointer; }
 .link:hover { text-decoration: underline; }
+
+/* Skill picker cards */
+.skill-section { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.skill-section-head { display: flex; align-items: center; gap: 8px; }
+.skill-section-head h3 { margin: 0; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+.skill-art { width: 48px; height: 48px; flex-shrink: 0; }
+.skill-section-head .skill-art { width: 26px; height: 26px; }
+
+.skill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.skill-card {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 8px 8px; color: var(--text); font-size: 0.8rem; cursor: pointer;
+  transition: border-color 0.15s, transform 0.05s, filter 0.15s;
+}
+.skill-card:hover:not(:disabled) { border-color: var(--accent-2); }
+.skill-card.added { border-color: var(--good); cursor: default; }
+.skill-check {
+  position: absolute; top: 4px; right: 6px; font-size: 0.75rem; color: var(--good);
+}
+
+.skill-list { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.skill-list .row { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; justify-content: space-between; }
+.rating-input { width: 56px !important; padding: 4px 6px !important; text-align: center; }
+
+/* Info bubbles */
+.info-tip {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px; border-radius: 50%; flex-shrink: 0;
+  border: 1px solid var(--border); color: var(--muted); background: transparent; padding: 0;
+  font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 0.68rem; line-height: 1;
+  cursor: help; transition: border-color 0.15s, color 0.15s;
+}
+.info-tip:hover, .info-tip:focus { border-color: var(--accent-2); color: var(--accent-2); outline: none; }
+.info-tip-bubble {
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: 230px; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 0.78rem; line-height: 1.45; color: var(--text);
+  text-align: left; white-space: normal; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  opacity: 0; pointer-events: none; transition: opacity 0.12s; z-index: 20;
+}
+.info-tip:hover .info-tip-bubble, .info-tip:focus .info-tip-bubble { opacity: 1; }
+.skill-card .info-tip { position: absolute; top: 5px; left: 6px; width: 14px; height: 14px; font-size: 0.62rem; }

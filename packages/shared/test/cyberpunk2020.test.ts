@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ALL_SKILLS,
+  SKILL_POINT_BUDGET,
   createCyberpunkCharacter,
   deriveStats,
   emptyAttributes,
@@ -58,4 +59,18 @@ test('rejects an empty character name', () => {
 test('skill catalogue is non-empty and unique', () => {
   assert.ok(ALL_SKILLS.length > 0);
   assert.equal(new Set(ALL_SKILLS).size, ALL_SKILLS.length);
+});
+
+test('trims skills that exceed the point budget down to exactly the budget', () => {
+  const skills: Record<string, number> = {};
+  for (const s of ALL_SKILLS) skills[s] = 6; // 18 * 6 = 108 points
+  const c = createCyberpunkCharacter({ name: 'Maxed', attributes: emptyAttributes(), skills }, ctx);
+  const total = Object.values(c.skills).reduce((a, b) => a + b, 0);
+  assert.equal(total, SKILL_POINT_BUDGET);
+});
+
+test('leaves under-budget skill sets untouched', () => {
+  const c = createCyberpunkCharacter({ name: 'Lean', attributes: emptyAttributes(), skills: { Guns: 5, Stealth: 4 } }, ctx);
+  assert.equal(c.skills.Guns, 5);
+  assert.equal(c.skills.Stealth, 4);
 });

@@ -1,4 +1,5 @@
 import type { GameEvent } from '@auto-punk/shared';
+import Markdown from './Markdown.js';
 
 const FIELD_LABEL: Record<string, string> = {
   'hp.current': 'HP',
@@ -23,7 +24,7 @@ function EventBody({ event }: { event: GameEvent }) {
   switch (event.type) {
     case 'scene':
     case 'gm_resolution':
-      return <span>{String(p.narration ?? '')}</span>;
+      return <Markdown text={String(p.narration ?? '')} />;
     case 'action_declared':
       return (
         <>

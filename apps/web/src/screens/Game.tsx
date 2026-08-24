@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../store/useGameStore.js';
 import EventFeed from '../components/EventFeed.js';
 import CharacterSheet from '../components/CharacterSheet.js';
+import Markdown from '../components/Markdown.js';
 
 export default function Game() {
   const state = useGameStore((s) => s.state)!;
   const playerId = useGameStore((s) => s.playerId);
   const declareAction = useGameStore((s) => s.declareAction);
   const proceedRound = useGameStore((s) => s.proceedRound);
+  const gmChat = useGameStore((s) => s.gmChat);
+  const askGm = useGameStore((s) => s.askGm);
 
   const me = state.players.find((p) => p.id === playerId);
   const isHost = !!me?.isHost;
@@ -22,6 +25,12 @@ export default function Game() {
   const [intent, setIntent] = useState('');
   const [skill, setSkill] = useState('');
   const [pool, setPool] = useState('');
+  const [gmQuestion, setGmQuestion] = useState('');
+  const gmLogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    gmLogRef.current?.scrollTo({ top: gmLogRef.current.scrollHeight });
+  }, [gmChat]);
 
   function submit(e: React.FormEvent): void {
     e.preventDefault();
@@ -34,6 +43,14 @@ export default function Game() {
     setIntent('');
     setSkill('');
     setPool('');
+  }
+
+  function submitGm(e: React.FormEvent): void {
+    e.preventDefault();
+    const q = gmQuestion.trim();
+    if (!q) return;
+    askGm(q);
+    setGmQuestion('');
   }
 
   const waiting = (round?.awaitingHumanIds ?? [])
@@ -93,6 +110,28 @@ export default function Game() {
         </div>
 
         <div className="col">
+          {inPlay && (
+            <div className="card col gm-chat">
+              <h2>Ask the GM</h2>
+              <p className="hint">Private questions about your character or the scene — answers don't affect the game.</p>
+              <div className="gm-chat-log" ref={gmLogRef}>
+                {gmChat.length === 0 && <span className="muted small">e.g. “What weapons am I carrying?”</span>}
+                {gmChat.map((entry) => (
+                  <div key={entry.id} className="col gm-msg">
+                    <span className="small muted">You: {entry.question}</span>
+                    {entry.answer ? <Markdown text={String(entry.answer)} /> : <span className="thinking small">The GM is thinking…</span>}
+                  </div>
+                ))}
+              </div>
+              <form onSubmit={submitGm}>
+                <div className="row" style={{ gap: 8 }}>
+                  <input value={gmQuestion} onChange={(e) => setGmQuestion(e.target.value)} placeholder="Ask the GM…" />
+                  <button type="submit" disabled={!gmQuestion.trim()}>Ask</button>
+                </div>
+              </form>
+            </div>
+          )}
+
           {status === 'combat' && round?.initiative && (
             <div className="card col" style={{ marginBottom: 12 }}>
               <h2>Initiative</h2>

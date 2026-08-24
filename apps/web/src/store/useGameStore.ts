@@ -3,6 +3,13 @@ import type { AIPersona, GameId, NewCharacterInput, RoomState } from '@auto-punk
 
 export type ConnStatus = 'idle' | 'connecting' | 'connected';
 
+/** One entry of the private GM side chat (kept in memory only, never sent to game state). */
+export interface GmChatEntry {
+  id: string;
+  question: string;
+  answer?: string;
+}
+
 interface GameStore {
   connStatus: ConnStatus;
   roomId?: string;
@@ -10,6 +17,7 @@ interface GameStore {
   seatToken?: string;
   state?: RoomState;
   error: string | null;
+  gmChat: GmChatEntry[];
 
   createRoom(name: string): void;
   joinRoom(roomId: string, name: string): void;
@@ -20,6 +28,7 @@ interface GameStore {
   declareAction(action: { intent: string; skillUsed?: string; dicePool?: number }): void;
   proceedRound(): void;
   regenerateAi(playerId?: string): void;
+  askGm(question: string): void;
   clearError(): void;
 }
 
@@ -64,6 +73,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         }
       } else if (msg.type === 'state') {
         set({ state: msg.state });
+      } else if (msg.type === 'gm_answer') {
+        set((s) => ({ gmChat: s.gmChat.map((e) => (e.id === msg.id ? { ...e, answer: msg.answer } : e)) }));
       } else if (msg.type === 'error') {
         set({ error: msg.message });
       }
@@ -77,6 +88,7 @@ export const useGameStore = create<GameStore>((set, get) => {
   return {
     connStatus: 'idle',
     error: null,
+    gmChat: [],
 
     createRoom(name) {
       connect();
@@ -126,6 +138,11 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
     regenerateAi(playerId) {
       send({ type: 'regenerate_ai_character', playerId });
+    },
+    askGm(question) {
+      const id = `q${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+      set((s) => ({ gmChat: [...s.gmChat.slice(-49), { id, question }] }));
+      send({ type: 'ask_gm', id, question });
     },
     clearError() {
       set({ error: null });

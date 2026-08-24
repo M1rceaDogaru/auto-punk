@@ -174,9 +174,13 @@ export type ClientMessage =
   | { type: 'regenerate_ai_character'; playerId?: string }
   | { type: 'start_game' }
   | { type: 'declare_action'; action: DeclaredAction }
-  | { type: 'proceed_round' };
+  | { type: 'proceed_round' }
+  /** Private side question to the GM; does not affect game state. */
+  | { type: 'ask_gm'; id: string; question: string };
 
 export type ServerMessage =
   | { type: 'joined'; roomId: string; playerId: string; seatToken: string; state: RoomState }
   | { type: 'state'; state: RoomState }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  /** Answer to a private `ask_gm` question, sent only to the asking player. */
+  | { type: 'gm_answer'; id: string; answer: string };

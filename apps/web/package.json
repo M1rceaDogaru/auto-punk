@@ -12,6 +12,8 @@
     "@auto-punk/shared": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "remark-breaks": "^4.0.0",
     "zustand": "^5.0.2"
   },
   "devDependencies": {

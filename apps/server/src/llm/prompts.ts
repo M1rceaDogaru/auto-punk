@@ -243,6 +243,35 @@ Respond with JSON: {"name": string, "attributes": {"body":number,"cool":number,"
   ];
 }
 
+/** Private side question from a human player about their character or the situation. */
+export function buildGmQuestionMessages(args: {
+  character?: Character;
+  worldSummary: string;
+  scene: string;
+  events: GameEvent[];
+  question: string;
+}): ChatMessage[] {
+  const system = `You are the AI Game Master for a Cyberpunk 2020 tabletop RPG. A human player is asking you a private side question about their character or the current situation, outside the main game flow. Answer helpfully and concisely (a few sentences) in the voice of a gritty cyberpunk GM. You may fill in plausible details consistent with the provided context — gear carried, environment, NPCs, prices — but stay strictly consistent with it. Do NOT advance the story, do NOT declare or resolve actions, and do NOT change anything: this is purely informational. If the context does not pin down an answer, say so briefly and offer your best in-character guess.`;
+  const user = `WORLD SUMMARY:
+${args.worldSummary || '(none yet)'}
+
+CURRENT SCENE:
+${args.scene}
+
+THE ASKING PLAYER'S CHARACTER:
+${args.character ? formatCharacters([args.character]) : '(no character yet)'}
+
+RECENT HISTORY:
+${formatEvents(args.events, 25)}
+
+PLAYER'S QUESTION:
+${args.question}`;
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: user },
+  ];
+}
+
 export function buildCompactionMessages(args: { existingSummary: string; newEvents: GameEvent[] }): ChatMessage[] {
   const system = `You maintain a running summary of an ongoing Cyberpunk 2020 game for context management. Fold the new events into the existing summary and produce an updated concise summary (max ~300 words) capturing key facts, locations, NPCs, injuries, relationships, goals, and plot developments. Respond with ONLY valid JSON.`;
   const user = `EXISTING SUMMARY:

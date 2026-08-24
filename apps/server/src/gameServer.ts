@@ -27,6 +27,7 @@ import {
   buildAiActionMessages,
   buildAiCharacterMessages,
   buildCompactionMessages,
+  buildGmQuestionMessages,
   buildOpeningMessages,
   buildResolutionMessages,
   validateAiAction,
@@ -280,16 +281,16 @@ export class GameServer {
       this.requireHost(doc, playerId);
       if (['playing', 'combat', 'ended'].includes(doc.room.status)) throw new Error('Game already started');
 
-      // Ensure every player has a character (generate missing AI sheets).
-      const missingAi = doc.players.some((p) => p.kind === 'ai' && !doc.characters.some((c) => c.playerId === p.id));
-      if (missingAi) await this.generateAiCharactersInner(doc);
-
       const humansWithoutChar = doc.players.filter((p) => p.kind === 'human' && !doc.characters.some((c) => c.playerId === p.id));
       if (humansWithoutChar.length > 0) throw new Error('All players need a character before starting');
 
       this.busy.set(roomId, true);
       this.broadcastState(roomId);
       try {
+        // Ensure every player has a character (generate missing AI sheets).
+        const missingAi = doc.players.some((p) => p.kind === 'ai' && !doc.characters.some((c) => c.playerId === p.id));
+        if (missingAi) await this.generateAiCharactersInner(doc);
+
         const opening = await this.llm.chatJSON(buildOpeningMessages({ worldSummary: doc.room.worldSummary, characters: doc.characters }), validateGmOpening, { temperature: 0.9 });
         doc.room.scene = opening.narration;
         this.appendEvent(doc, 'scene', { narration: opening.narration });
@@ -338,6 +339,28 @@ export class GameServer {
     if (['playing', 'combat'].includes(doc.room.status) && !this.busy.get(roomId)) {
       void this.resolveRound(roomId).catch((err) => console.error('[director] resolve failed:', err));
     }
+  }
+
+  /** Private side question from a human player. Informational only: no state changes, no busy flag. */
+  async askGm(ws: WebSocket, roomId: string, playerId: string, id: string, question: string): Promise<void> {
+    const doc = this.store.get(roomId);
+    if (!doc) throw new Error('Room not found');
+    const player = this.requirePlayer(doc, playerId);
+    if (player.kind !== 'human') throw new Error('Only human players can ask the GM questions');
+    if (!['playing', 'combat'].includes(doc.room.status)) throw new Error('The game has not started yet');
+
+    const character = doc.characters.find((c) => c.playerId === playerId);
+    const answer = await this.llm.chat(
+      buildGmQuestionMessages({
+        character,
+        worldSummary: doc.room.worldSummary,
+        scene: doc.room.scene,
+        events: doc.events,
+        question,
+      }),
+      { temperature: 0.7 },
+    );
+    this.send(ws, { type: 'gm_answer', id, answer });
   }
 
   private async resolveRound(roomId: string): Promise<void> {

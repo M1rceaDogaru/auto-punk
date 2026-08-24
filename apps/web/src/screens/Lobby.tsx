@@ -60,6 +60,10 @@ export default function Lobby() {
         <div className="card" style={{ marginBottom: 16 }}>Waiting for the host to choose a game…</div>
       )}
 
+      {status === 'character_creation' && busy && (
+        <div className="card thinking" style={{ marginBottom: 16 }}>The GM is preparing the game — generating AI characters and writing the opening scene…</div>
+      )}
+
       <div className="row" style={{ alignItems: 'stretch', gap: 16 }}>
         <div className="col grow">
           {isHost && status !== 'creating' && (

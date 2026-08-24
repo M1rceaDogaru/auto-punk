@@ -81,6 +81,9 @@ export function handleConnection(ws: WebSocket, server: GameServer): void {
         case 'proceed_round':
           server.proceedRound(binding.roomId, binding.playerId);
           break;
+        case 'ask_gm':
+          void server.askGm(ws, binding.roomId, binding.playerId, msg.id, msg.question).catch((e) => sendError((e as Error).message));
+          break;
         default:
           sendError('Unknown message');
       }

@@ -23,6 +23,9 @@ export default function Game() {
   const inPlay = status === 'playing' || status === 'combat';
   const canAct = inPlay && !!round && round.phase === 'collecting' && round.awaitingHumanIds.includes(playerId ?? '') && !busy;
 
+  const online = new Set(state.onlinePlayerIds);
+  const awayHumans = state.players.filter((p) => p.kind === 'human' && !online.has(p.id));
+
   const [intent, setIntent] = useState('');
   const [skill, setSkill] = useState('');
   const [pool, setPool] = useState('');
@@ -74,6 +77,12 @@ export default function Game() {
         <h1>Table {state.room.id}</h1>
         <span className="badge">{status}{round ? ` · round ${round.number}` : ''}</span>
       </div>
+
+      {inPlay && awayHumans.length > 0 && (
+        <div className="waiting-banner" style={{ marginBottom: 12 }}>
+          ⏸ Waiting for <b>{awayHumans.map((h) => h.name).join(', ')}</b> to return before play resumes.
+        </div>
+      )}
 
       <div className="game-grid">
         <div className="col grow">
@@ -133,7 +142,14 @@ export default function Game() {
           )}
 
           {inPlay && isHost && round?.phase === 'collecting' && (
-            <button className="ghost" onClick={proceedRound}>Proceed now (skip waiting players)</button>
+            <button
+              className="ghost"
+              disabled={awayHumans.length > 0}
+              title={awayHumans.length > 0 ? `Waiting for ${awayHumans.map((h) => h.name).join(', ')} to reconnect` : undefined}
+              onClick={proceedRound}
+            >
+              Proceed now (skip waiting players)
+            </button>
           )}
         </div>
 

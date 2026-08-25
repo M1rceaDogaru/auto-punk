@@ -17,6 +17,7 @@ import {
   type Player,
   type Room,
   type RoomState,
+  type RoomSummary,
   type RoundInfo,
   type StateChange,
 } from '@auto-punk/shared';
@@ -85,7 +86,23 @@ export class GameServer {
       events: doc.events.slice(-this.config.maxEventsInState),
       round: doc.round,
       busy: this.busy.get(doc.room.id) ?? false,
+      onlinePlayerIds: [...this.connectedPlayerIds(doc.room.id)],
     };
+  }
+
+  /** Player ids in a room that currently have at least one live socket. */
+  private connectedPlayerIds(roomId: string): Set<string> {
+    const ids = new Set<string>();
+    for (const binding of this.sockets.values()) {
+      if (binding.roomId === roomId) ids.add(binding.playerId);
+    }
+    return ids;
+  }
+
+  /** Human players in a room who are not currently connected. */
+  private awayHumans(doc: RoomDoc): Player[] {
+    const online = this.connectedPlayerIds(doc.room.id);
+    return doc.players.filter((p) => p.kind === 'human' && !online.has(p.id));
   }
 
   broadcastState(roomId: string): void {
@@ -95,6 +112,14 @@ export class GameServer {
     for (const [ws, binding] of this.sockets) {
       if (binding.roomId === roomId) this.send(ws, { type: 'state', state });
     }
+  }
+
+  /** Summaries of every room, most recently active first (for the landing-page table list). */
+  listRooms(): RoomSummary[] {
+    return this.store
+      .list()
+      .map((doc) => summarizeRoom(doc))
+      .sort((a, b) => b.updatedAt - a.updatedAt);
   }
 
   // ---- Room / player lifecycle --------------------------------------------
@@ -128,12 +153,14 @@ export class GameServer {
   joinRoom(roomId: string, name: string, seatToken?: string): Player {
     const doc = this.store.get(roomId);
     if (!doc) throw new Error('Room not found');
-    if (['playing', 'combat', 'ended'].includes(doc.room.status)) {
-      throw new Error('Game already in progress — cannot join now');
-    }
+    // Returning member: reattach to their existing seat in any status (survives refresh/restart).
     if (seatToken) {
       const existing = doc.players.find((p) => p.seatToken === seatToken);
       if (existing) return existing;
+    }
+    // Brand-new players can only join before the game starts.
+    if (['playing', 'combat', 'ended'].includes(doc.room.status)) {
+      throw new Error('Game already in progress — cannot join now');
     }
     const player: Player = {
       id: uuid(),
@@ -338,6 +365,11 @@ export class GameServer {
     if (!doc) throw new Error('Room not found');
     this.requireHost(doc, playerId);
     if (['playing', 'combat'].includes(doc.room.status) && !this.busy.get(roomId)) {
+      // Don't let the host skip past players who are disconnected — wait for them to return.
+      const away = this.awayHumans(doc);
+      if (away.length > 0) {
+        throw new Error(`Waiting for ${away.map((p) => p.name).join(', ')} to reconnect before proceeding`);
+      }
       void this.resolveRound(roomId).catch((err) => console.error('[director] resolve failed:', err));
     }
   }
@@ -575,6 +607,24 @@ export class GameServer {
 }
 
 // ---- Pure helpers ----------------------------------------------------------
+
+function summarizeRoom(doc: RoomDoc): RoomSummary {
+  const humans = doc.players.filter((p) => p.kind === 'human');
+  const ais = doc.players.filter((p) => p.kind === 'ai');
+  const host = doc.players.find((p) => p.isHost);
+  const scene = (doc.room.scene ?? '').trim();
+  return {
+    id: doc.room.id,
+    status: doc.room.status,
+    hostName: host?.name,
+    humanCount: humans.length,
+    aiCount: ais.length,
+    playerCount: doc.players.length,
+    createdAt: doc.room.createdAt,
+    updatedAt: doc.room.updatedAt,
+    label: scene ? (scene.length > 90 ? `${scene.slice(0, 90)}…` : scene) : undefined,
+  };
+}
 
 function sanitizeName(name: string): string {
   const clean = (name ?? '').trim().replace(/\s+/g, ' ').slice(0, 32);

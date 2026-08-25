@@ -161,6 +161,22 @@ export interface RoomState {
   round?: RoundInfo;
   /** True while the server is mid-LLM-call; clients should disable inputs. */
   busy: boolean;
+  /** Player ids with a live connection right now (presence, recomputed per broadcast). */
+  onlinePlayerIds: string[];
+}
+
+/** Lightweight room descriptor for the landing-page table list (HTTP `GET /api/rooms`). */
+export interface RoomSummary {
+  id: string;
+  status: RoomStatus;
+  hostName?: string;
+  humanCount: number;
+  aiCount: number;
+  playerCount: number;
+  createdAt: number;
+  updatedAt: number;
+  /** Short, truncated label of the current scene (may be empty for fresh tables). */
+  label?: string;
 }
 
 // ---- WebSocket protocol ---------------------------------------------------

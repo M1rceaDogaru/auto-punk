@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AIPersona, GameId, NewCharacterInput, RoomState } from '@auto-punk/shared';
+import type { AIPersona, GameId, NewCharacterInput, RoomState, RoomSummary } from '@auto-punk/shared';
 
 export type ConnStatus = 'idle' | 'connecting' | 'connected';
 
@@ -16,9 +16,12 @@ interface GameStore {
   playerId?: string;
   seatToken?: string;
   state?: RoomState;
+  /** Landing-page table list (fetched over HTTP, refreshed while on the landing screen). */
+  rooms?: RoomSummary[];
   error: string | null;
   gmChat: GmChatEntry[];
 
+  fetchRooms(): Promise<void>;
   createRoom(name: string): void;
   joinRoom(roomId: string, name: string): void;
   setGame(gameId: GameId): void;
@@ -37,6 +40,14 @@ function wsUrl(): string {
   if (env) return env;
   const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
   return `${proto}://${window.location.hostname}:8787/ws`;
+}
+
+/** Base URL of the game server's HTTP API. In dev Vite serves on :5173 but the API lives on :8787. */
+function apiBaseUrl(): string {
+  const env = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_URL;
+  if (env) return env.replace(/\/$/, '');
+  const proto = window.location.protocol === 'https:' ? 'https' : 'http';
+  return `${proto}://${window.location.hostname}:8787`;
 }
 
 function seatKey(roomId: string): string {
@@ -87,8 +98,19 @@ export const useGameStore = create<GameStore>((set, get) => {
 
   return {
     connStatus: 'idle',
+    rooms: undefined,
     error: null,
     gmChat: [],
+
+    async fetchRooms() {
+      try {
+        const res = await fetch(`${apiBaseUrl()}/api/rooms`);
+        if (!res.ok) return;
+        set({ rooms: (await res.json()) as RoomSummary[] });
+      } catch {
+        /* server unreachable — leave the list empty */
+      }
+    },
 
     createRoom(name) {
       connect();

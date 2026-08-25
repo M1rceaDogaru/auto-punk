@@ -68,6 +68,9 @@ async function main(): Promise<void> {
 
   app.get('/api/health', async () => ({ ok: true, model: config.model, rooms: store.list().length }));
 
+  // Landing-page table list: lightweight summaries of every room.
+  app.get('/api/rooms', async () => server.listRooms());
+
   const distDir = process.env.WEB_DIST ?? path.resolve(new URL('../../web/dist/', import.meta.url).pathname);
   if (existsSync(distDir)) {
     app.setNotFoundHandler((req, reply) => serveStatic(req, reply, distDir));

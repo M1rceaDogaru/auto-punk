@@ -27,8 +27,14 @@ export function handleConnection(ws: WebSocket, server: GameServer): void {
     routeJoined(msg);
   });
 
-  ws.on('close', () => server.detachSocket(ws));
-  ws.on('error', () => server.detachSocket(ws));
+  const onDetach = (): void => {
+    const binding = server.getBinding(ws);
+    server.detachSocket(ws);
+    // Let the rest of the table know this player is now away.
+    if (binding) server.broadcastState(binding.roomId);
+  };
+  ws.on('close', onDetach);
+  ws.on('error', onDetach);
 
   function handleJoinPhase(msg: ClientMessage): void {
     try {
@@ -37,6 +43,7 @@ export function handleConnection(ws: WebSocket, server: GameServer): void {
         joined = true;
         server.attachSocket(ws, doc.room.id, player.id);
         send({ type: 'joined', roomId: doc.room.id, playerId: player.id, seatToken: player.seatToken, state: server.stateFor(doc) });
+        server.broadcastState(doc.room.id);
       } else if (msg.type === 'join') {
         const player = server.joinRoom(msg.roomId, msg.name, msg.seatToken);
         joined = true;
@@ -47,6 +54,7 @@ export function handleConnection(ws: WebSocket, server: GameServer): void {
           return;
         }
         send({ type: 'joined', roomId: msg.roomId, playerId: player.id, seatToken: player.seatToken, state });
+        server.broadcastState(msg.roomId);
       } else {
         sendError('First message must be "create" or "join"');
       }

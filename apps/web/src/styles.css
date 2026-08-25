@@ -174,3 +174,26 @@ label.field { display: flex; flex-direction: column; gap: 4px; font-size: 0.85re
 }
 .info-tip:hover .info-tip-bubble, .info-tip:focus .info-tip-bubble { opacity: 1; }
 .skill-card .info-tip { position: absolute; top: 5px; left: 6px; width: 14px; height: 14px; font-size: 0.62rem; }
+
+/* Landing table list */
+.room-list { display: flex; flex-direction: column; gap: 2px; }
+.room-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 8px; border-bottom: 1px solid var(--border); border-radius: 8px;
+}
+.room-row:last-child { border-bottom: none; }
+.room-row.mine { background: rgba(255,42,109,0.07); }
+
+/* Room status badges */
+.badge.status-creating { color: var(--muted); }
+.badge.status-character_creation { color: #cbb6ff; border-color: #6b4fb0; }
+.badge.status-ready_check { color: #1a1205; background: var(--warn); border-color: var(--warn); }
+.badge.status-playing { color: #04120a; background: var(--good); border-color: var(--good); }
+.badge.status-combat { color: #fff; background: rgba(255,77,77,0.22); border-color: var(--bad); }
+.badge.status-ended { color: var(--muted); text-decoration: line-through; }
+
+/* Waiting-for-players banner (in-game) */
+.waiting-banner {
+  background: rgba(255,176,32,0.12); border: 1px solid var(--warn); color: #ffe6b8;
+  padding: 10px 14px; border-radius: 10px; font-size: 0.9rem;
+}
